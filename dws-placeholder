@@ -1,0 +1,23 @@
+#!/bin/bash
+# dws 占位脚本 — 在二进制编译好之前显示指引
+#
+# 编译真正的 dws 二进制:
+#   bash {baseDir}/scripts/build-dws.sh
+
+echo "=============================================="
+echo "  dws 二进制尚未编译"
+echo "=============================================="
+echo ""
+echo "编译方法（需要有 Go 1.25+ 的机器）:"
+echo ""
+echo "  cd $(dirname "$0")"
+echo "  bash scripts/build-dws.sh"
+echo ""
+echo "或者手动编译:"
+echo "  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \\"
+echo "    go build -ldflags=\"-s -w\" -o $(dirname "$0")/dws \\"
+echo "    <dingtalk-workspace-cli 源码目录>/cmd"
+echo ""
+echo "编译完成后，此文件会被真正的 dws 二进制替换。"
+echo "=============================================="
+exit 1

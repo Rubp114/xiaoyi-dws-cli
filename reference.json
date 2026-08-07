@@ -1,0 +1,232 @@
+{
+  "$schema": "https://openclaw.ai/schemas/tool-reference.json",
+  "tool": {
+    "name": "dws",
+    "type": "cli",
+    "binary": "{baseDir}/dws",
+    "version": ">=1.0.15",
+    "description": "DingTalk Workspace CLI — 钉钉全产品命令行工具（纯静态二进制，零运行时依赖）",
+
+    "runtime": {
+      "os": ["linux"],
+      "arch": ["amd64", "arm64"],
+      "static_binary": true,
+      "cgo_disabled": true,
+      "no_runtime_deps": true,
+      "setup": [
+        "chmod +x {baseDir}/dws",
+        "{baseDir}/dws version"
+      ]
+    },
+
+    "auth": {
+      "method": "device_flow",
+      "description": "设备流 OAuth 2.0，终端输出验证码和激活链接，用户在设备浏览器中完成钉钉扫码授权，CLI 自动轮询等待",
+      "setup_command": "{baseDir}/dws auth login --device --no-browser --format json",
+      "verify_command": "{baseDir}/dws profile list --format json",
+      "credential_storage": "OS 密钥链（macOS Keychain / Windows DPAPI / Linux 加密文件）",
+      "client_id_source": "自动从 MCP 网关获取（推荐），或手动设置 DWS_CLIENT_ID 环境变量",
+      "env_vars": {
+        "required": [],
+        "optional": [
+          {
+            "name": "DWS_CLIENT_ID",
+            "description": "钉钉应用 AppKey（不设置则自动从 MCP 网关获取）"
+          },
+          {
+            "name": "DWS_CLIENT_SECRET",
+            "description": "钉钉应用 AppSecret（MCP 代理模式下不需要）"
+          },
+          {
+            "name": "DWS_CONFIG_DIR",
+            "description": "配置目录，默认 ~/.dws"
+          }
+        ]
+      }
+    },
+
+    "invocation": {
+      "pattern": "{baseDir}/dws <product> <command> [flags]",
+      "global_flags": {
+        "--format": {
+          "type": "enum",
+          "values": ["json", "table", "raw"],
+          "default": "table",
+          "agent_default": "json",
+          "description": "输出格式"
+        },
+        "--profile": {
+          "type": "string",
+          "description": "组织:用户 标识，不传使用当前默认账号"
+        },
+        "--yes": {
+          "type": "bool",
+          "description": "跳过确认（危险操作必须先获用户同意）"
+        },
+        "--dry-run": {
+          "type": "bool",
+          "description": "预览请求不执行"
+        },
+        "--jq": {
+          "type": "string",
+          "description": "jq 表达式过滤 JSON 输出"
+        },
+        "--fields": {
+          "type": "string",
+          "description": "逗号分隔的返回字段"
+        },
+        "--verbose": {
+          "type": "bool",
+          "description": "详细输出（调试用）"
+        }
+      },
+      "discovery": {
+        "schema": "{baseDir}/dws schema --compact --format json",
+        "help": "{baseDir}/dws <command> --help",
+        "shortcut_list": "{baseDir}/dws shortcut list --service <product> --format json"
+      }
+    },
+
+    "products": {
+      "aisearch": {
+        "name": "AI搜问",
+        "description": "通用找人：按姓名/部门/职位/职责查找",
+        "shortcuts": 0,
+        "reference": "{baseDir}/references/products/aisearch.md"
+      },
+      "aitable": {
+        "name": "AI表格",
+        "description": "Base/数据表/字段/记录/视图/附件/图表/仪表盘",
+        "shortcuts": 29,
+        "reference": "{baseDir}/references/products/aitable.md"
+      },
+      "attendance": {
+        "name": "考勤",
+        "description": "打卡结果/考勤组/假期类型/假期余额",
+        "shortcuts": 19,
+        "reference": "{baseDir}/references/products/attendance.md"
+      },
+      "calendar": {
+        "name": "日历",
+        "description": "日程/参与者/附件/会议室/闲忙查询",
+        "shortcuts": 20,
+        "reference": "{baseDir}/references/products/calendar.md"
+      },
+      "chat": {
+        "name": "群聊与消息",
+        "description": "搜索群/建群/发消息/撤回/机器人/Webhook",
+        "shortcuts": 98,
+        "reference": "{baseDir}/references/products/chat.md"
+      },
+      "contact": {
+        "name": "通讯录",
+        "description": "用户查询/部门/角色/花名册",
+        "shortcuts": 14,
+        "reference": "{baseDir}/references/products/contact.md"
+      },
+      "doc": {
+        "name": "钉钉文档",
+        "description": "搜索/浏览/读写/块级编辑/评论/权限",
+        "shortcuts": 41,
+        "reference": "{baseDir}/references/products/doc.md"
+      },
+      "drive": {
+        "name": "云盘",
+        "description": "文件列表/元数据/文件夹/上传下载",
+        "shortcuts": 7,
+        "reference": "{baseDir}/references/products/drive.md"
+      },
+      "mail": {
+        "name": "邮箱",
+        "description": "邮箱地址查询/邮件搜索/详情/发送",
+        "shortcuts": 10,
+        "reference": "{baseDir}/references/products/mail.md"
+      },
+      "minutes": {
+        "name": "AI听记",
+        "description": "听记列表/摘要/转写/待办/思维导图/发言人",
+        "shortcuts": 6,
+        "reference": "{baseDir}/references/products/minutes.md"
+      },
+      "oa": {
+        "name": "审批",
+        "description": "待处理/详情/同意/拒绝/撤销/转交",
+        "shortcuts": 7,
+        "reference": "{baseDir}/references/products/oa.md"
+      },
+      "report": {
+        "name": "日志",
+        "description": "按模版创建/收件箱/已发送/模版查看",
+        "shortcuts": 2,
+        "reference": "{baseDir}/references/products/report.md"
+      },
+      "sheet": {
+        "name": "在线电子表格",
+        "description": "工作表CRUD/区域读写/批量写入/导出xlsx",
+        "shortcuts": 2,
+        "reference": "{baseDir}/references/products/sheet.md"
+      },
+      "todo": {
+        "name": "待办",
+        "description": "创建/查询/修改/标记完成/删除",
+        "shortcuts": 11,
+        "reference": "{baseDir}/references/products/todo.md"
+      },
+      "wiki": {
+        "name": "知识库",
+        "description": "空间创建/详情/列表/搜索",
+        "shortcuts": 1,
+        "reference": "{baseDir}/references/products/wiki.md"
+      }
+    },
+
+    "scripts": {
+      "path": "{baseDir}/scripts/",
+      "runtime": "python3",
+      "count": 34,
+      "categories": [
+        "AI表格批量导入导出",
+        "考勤报表生成",
+        "日历日程安排",
+        "邮件收发",
+        "待办批处理",
+        "审批批量操作",
+        "日志处理",
+        "听记分析",
+        "云盘目录遍历",
+        "文档批量创建"
+      ]
+    },
+
+    "safety": {
+      "idempotent_patterns": ["list", "get", "search", "query", "read", "status"],
+      "destructive_patterns": ["delete", "remove", "send", "recall", "revoke"],
+      "require_confirmation_for": [
+        "delete", "remove", "send", "recall", "revoke",
+        "group members remove", "message recall-by-bot",
+        "base delete", "table delete", "field delete"
+      ],
+      "max_batch_size": 30,
+      "domain_allowlist": ["*.dingtalk.com"],
+      "exit_codes": {
+        "0": "成功",
+        "1": "API 调用失败 — 检查参数后重试",
+        "2": "认证失败 — 执行 {baseDir}/dws auth login --device --no-browser --format json",
+        "3": "参数校验失败 — 用 --help 确认正确用法",
+        "4": "PAT 拦截",
+        "5": "内部错误 — 用 --verbose 收集诊断信息",
+        "6": "服务发现失败"
+      }
+    }
+  },
+
+  "skill_metadata": {
+    "source": "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli",
+    "source_skill_mode": "mono",
+    "migration_date": "2026-08-07",
+    "cli_version": ">=1.0.15",
+    "skill_type": "self-contained",
+    "binary_included": true,
+    "no_external_downloads": true
+  }
+}
