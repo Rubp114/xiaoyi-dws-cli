@@ -8,47 +8,51 @@
 |---|---|
 | `SKILL.md` | Skill 入口（OpenClaw 加载此文件） |
 | `reference.json` | CLI 工具注册表（命令目录 + 安全规则 + 产品索引） |
-| `dws` | ★ 钉钉 CLI 二进制（纯静态，需编译） |
-| `references/` | 产品参考文档（124 个 .md，覆盖 20+ 产品） |
-| `scripts/` | Python 辅助脚本（34 个，批量/复合操作） |
+| `references/` | 产品参考文档 |
+| `scripts/` | Python 辅助脚本（批量/复合操作） |
 
 ## 快速开始
 
-### 1. 编译 dws 二进制
+### 1. 安装 dws CLI
 
-在装有 Go 1.25+ 的 Linux 机器上：
+本 skill 不携带 dws 二进制，使用前需先安装。
+
+**macOS / Linux:**
 
 ```bash
-bash scripts/build-dws.sh
+curl -fsSL https://raw.githubusercontent.com/DingTalk-Real-AI/dingtalk-workspace-cli/main/scripts/install.sh | sh
 ```
 
-产物为 `dws`（纯静态 Linux amd64 二进制，约 15-20 MB）。
+**Windows (PowerShell):**
 
-### 2. 部署到 OpenClaw
-
-将整个 `dingtalk/` 目录复制到 OpenClaw 的 skills 目录：
-
-```bash
-cp -r dingtalk/ ~/.openclaw/workspace/skills/
+```powershell
+irm https://raw.githubusercontent.com/DingTalk-Real-AI/dingtalk-workspace-cli/main/scripts/install.ps1 | iex
 ```
 
-### 3. 初始化
+中国大陆用户可使用 Gitee 镜像：
 
 ```bash
-chmod +x ~/.openclaw/workspace/skills/dingtalk/dws
-~/.openclaw/workspace/skills/dingtalk/dws version
+DWS_GITEE_REPO=DingTalk-Real-AI/dingtalk-workspace-cli curl -fsSL https://gitee.com/DingTalk-Real-AI/dingtalk-workspace-cli/raw/main/scripts/install.sh | sh
 ```
 
-### 4. 登录
+其他安装方式（npm、Homebrew、预编译二进制、源码编译）详见[上游 README](https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli#installation)。
+
+### 2. 验证安装
 
 ```bash
-~/.openclaw/workspace/skills/dingtalk/dws auth login --device --no-browser --format json
+dws version
+```
+
+### 3. 登录
+
+```bash
+dws auth login --device --no-browser --format json
 ```
 
 将验证码和链接发给用户完成钉钉扫码授权。
 
 ## 依赖说明
 
-- **dws 二进制**: 纯静态编译（CGO_ENABLED=0），无运行时依赖
+- **dws CLI**: 需通过官方安装脚本安装（纯静态编译，无运行时依赖）
 - **Python 脚本**: 仅复杂复合任务时按需使用，核心功能不依赖
 - **联网**: 运行时需访问 `*.dingtalk.com`（钉钉 API）

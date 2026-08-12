@@ -1,5 +1,5 @@
 ---
-name: dws-skill
+name: xiaoyi-dws-cli
 description: >
   钉钉全产品能力(AI表格/AI搜问/日历/通讯录/群聊与机器人/待办/审批/考勤/日志/
   DING消息/钉钉文档/钉钉云盘/原生Markdown文件/AI听记/邮箱/在线电子表格/知识库等)。
@@ -7,35 +7,29 @@ description: >
   创建待办、提交审批、查看考勤、提交日报周报、读写钉钉文档、上传下载云盘文件、
   读取或修改原生.md文件、查询听记纪要、收发邮件、读写在线电子表格(axls)、
   管理钉钉知识库时使用。
-metadata:
-  openclaw:
-    requires:
-      anyBins:
-        - "{baseDir}/dws"
-    emoji: "📌"
 ---
 
 # 钉钉全产品 Skill
 
-通过 `{baseDir}/dws` 命令管理钉钉产品能力。本 skill 包**自带 dws 二进制**，无需联网下载任何组件。
+通过 `dws` 命令管理钉钉产品能力。本 skill **不携带 dws 二进制**，使用前需先安装 dws CLI 工具。
 
 ---
 
 ## 环境准备（首次使用执行一次）
 
-确保二进制有执行权限：
+dws 是纯静态编译的 Go 二进制，无运行时依赖（不需要 Go、Python、Node.js）。使用前需先安装：
+
+### 安装 dws
 
 ```bash
-chmod +x {baseDir}/dws
+curl -fsSL https://raw.githubusercontent.com/DingTalk-Real-AI/dingtalk-workspace-cli/main/scripts/install.sh | sh
 ```
 
-验证可用：
+### 验证安装
 
 ```bash
-{baseDir}/dws version
+dws version
 ```
-
-`{baseDir}/dws` 是纯静态编译的 Go 二进制，无运行时依赖（不需要 Go、Python、Node.js），直接在沙箱中运行。
 
 Python 辅助脚本位于 `{baseDir}/scripts/`，仅在明确覆盖的复合任务时按需调用（批量导入导出、日程安排等），核心功能不需要 Python。
 
@@ -48,7 +42,7 @@ Python 辅助脚本位于 `{baseDir}/scripts/`，仅在明确覆盖的复合任�
 ### 首次登录
 
 ```bash
-{baseDir}/dws auth login --device --no-browser --format json
+dws auth login --device --no-browser --format json
 ```
 
 终端会输出:
@@ -73,19 +67,15 @@ CLI 会自动轮询等待授权完成（最长 10 分钟），完成后凭据自
 
 ### ClientID 配置
 
-如果尚未配置 ClientID，CLI 会自动从 MCP 网关获取（推荐）。也可以手动指定：
-
-```bash
-export DWS_CLIENT_ID="dingxxxxxxxxxxxxx"
-```
+如果尚未配置 ClientID，CLI 会自动从 MCP 网关获取（推荐）。
 
 ### 验证登录状态
 
 ```bash
-{baseDir}/dws profile list --format json
+dws profile list --format json
 ```
 
-> **命令可用性以当前随包 dws 二进制为准**。如果 `{baseDir}/dws <cmd> --help` 不存在，说明当前版本未暴露该命令。实际调用前可用 `{baseDir}/dws <cmd> --help` 或 `--dry-run` 验证。
+> **命令可用性以当前随包 dws 二进制为准**。如果 `dws <cmd> --help` 不存在，说明当前版本未暴露该命令。实际调用前可用 `dws <cmd> --help` 或 `--dry-run` 验证。
 
 ---
 
@@ -107,9 +97,9 @@ export DWS_CLIENT_ID="dingxxxxxxxxxxxxx"
 
 `shortcut` 是对常用操作的高层封装，优先承担用户意图；产品参考文档负责判断意图和风险，CLI help 负责声明当前版本真正可调用的命令。
 
-- 先按产品参考、意图表和 recipe 路由。用户意图可由可见 Shortcut 满足时，优先使用 `{baseDir}/dws <service> +<verb> ... --format json`
-- 用 `{baseDir}/dws schema --cli-path "<service> +<verb>" --compact --format json` 读取参数、约束和安全确认语义
-- 组装参数前用 `{baseDir}/dws <service> +<verb> --help` 核对当前接受的 flags
+- 先按产品参考、意图表和 recipe 路由。用户意图可由可见 Shortcut 满足时，优先使用 `dws <service> +<verb> ... --format json`
+- 用 `dws schema --cli-path "<service> +<verb>" --compact --format json` 读取参数、约束和安全确认语义
+- 组装参数前用 `dws <service> +<verb> --help` 核对当前接受的 flags
 - shortcut catalog 中 `confirmation=user_required` 时，必须先获得用户确认，确认后才加 `--yes`
 - 如果 shortcut 不在 help 中，改用产品参考里的原子命令或脚本；不要猜测未展示的命令
 - shortcut 失败时先加 `--verbose` 复查
@@ -137,13 +127,13 @@ export DWS_CLIENT_ID="dingxxxxxxxxxxxxx"
 | `todo` | 11 |
 | `wiki` | 1 |
 
-仅当现有路由和 reference 都无法定位低频能力时，才用 `{baseDir}/dws shortcut list --service <service> --format json` 做最后回退。
+仅当现有路由和 reference 都无法定位低频能力时，才用 `dws shortcut list --service <service> --format json` 做最后回退。
 
 ---
 
 ## 多组织 / 多账号
 
-- `{baseDir}/dws profile list --format json` 默认返回全部账号。使用稳定的 `profile=corpId:userId` 标识
+- `dws profile list --format json` 默认返回全部账号。使用稳定的 `profile=corpId:userId` 标识
 - 输入支持 `corpId:userId`、`corpId:userName`、`corpName:userId`、`corpName:userName`
 - 不传 `--profile` 使用当前默认账号
 - 多账号组织没有默认账号时必须让用户指定；禁止选择第一项或最近登录的账号
@@ -252,16 +242,16 @@ Step 3 → 加 --yes 执行命令
 
 ```bash
 # 第 1 层：产品概览
-{baseDir}/dws schema
+dws schema
 
 # 第 2 层：产品级
-{baseDir}/dws schema calendar --compact
+dws schema calendar --compact
 
 # 第 3 层：分组级
-{baseDir}/dws schema "calendar event" --compact
+dws schema "calendar event" --compact
 
 # 第 4 层：Agent leaf（参数契约）
-{baseDir}/dws schema "calendar event create" --compact
+dws schema "calendar event create" --compact
 ```
 
 **`--compact` Agent 模式**保留: `cli_path`、`canonical_path`、`description`、`effect`、`risk`、`confirmation`、`parameters`（含 `type`/`required`/`description`/`default`/`enum`）、`constraints`、`examples`。
@@ -280,7 +270,7 @@ Step 3 → 加 --yes 执行命令
     "title": { "type": "string", "required": true }
   },
   "constraints": {},
-  "examples": ["{baseDir}/dws calendar event create --title ..."]
+  "examples": ["dws calendar event create --title ..."]
 }
 ```
 
@@ -294,7 +284,7 @@ Step 3 → 加 --yes 执行命令
 
 1. 先读取 JSON 错误的 `retryable`、`hint` 和 `actions`；只有 `retryable=true` 时才做一次有界重试
 2. 仍然失败，报告完整错误信息给用户
-3. 认证失败时，引导执行 `{baseDir}/dws auth login --device --no-browser --format json`
+3. 认证失败时，引导执行 `dws auth login --device --no-browser --format json`
 4. 各产品高频错误见 [{baseDir}/references/error-codes.md]({baseDir}/references/error-codes.md)
 5. 遇到 [{baseDir}/references/capability-limits.md]({baseDir}/references/capability-limits.md) 中列出的「已知不支持操作」时，直接告知用户不支持
 

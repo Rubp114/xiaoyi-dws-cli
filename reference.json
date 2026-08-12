@@ -3,7 +3,7 @@
   "tool": {
     "name": "dws",
     "type": "cli",
-    "binary": "{baseDir}/dws",
+    "binary": "dws",
     "version": ">=1.0.15",
     "description": "DingTalk Workspace CLI — 钉钉全产品命令行工具（纯静态二进制，零运行时依赖）",
 
@@ -14,16 +14,16 @@
       "cgo_disabled": true,
       "no_runtime_deps": true,
       "setup": [
-        "chmod +x {baseDir}/dws",
-        "{baseDir}/dws version"
+        "curl -fsSL https://raw.githubusercontent.com/DingTalk-Real-AI/dingtalk-workspace-cli/main/scripts/install.sh | sh",
+        "dws version"
       ]
     },
 
     "auth": {
       "method": "device_flow",
       "description": "设备流 OAuth 2.0，终端输出验证码和激活链接，用户在设备浏览器中完成钉钉扫码授权，CLI 自动轮询等待",
-      "setup_command": "{baseDir}/dws auth login --device --no-browser --format json",
-      "verify_command": "{baseDir}/dws profile list --format json",
+      "setup_command": "dws auth login --device --no-browser --format json",
+      "verify_command": "dws profile list --format json",
       "credential_storage": "OS 密钥链（macOS Keychain / Windows DPAPI / Linux 加密文件）",
       "client_id_source": "自动从 MCP 网关获取（推荐），或手动设置 DWS_CLIENT_ID 环境变量",
       "env_vars": {
@@ -46,7 +46,7 @@
     },
 
     "invocation": {
-      "pattern": "{baseDir}/dws <product> <command> [flags]",
+      "pattern": "dws <product> <command> [flags]",
       "global_flags": {
         "--format": {
           "type": "enum",
@@ -81,9 +81,9 @@
         }
       },
       "discovery": {
-        "schema": "{baseDir}/dws schema --compact --format json",
-        "help": "{baseDir}/dws <command> --help",
-        "shortcut_list": "{baseDir}/dws shortcut list --service <product> --format json"
+        "schema": "dws schema --compact --format json",
+        "help": "dws <command> --help",
+        "shortcut_list": "dws shortcut list --service <product> --format json"
       }
     },
 
@@ -211,7 +211,7 @@
       "exit_codes": {
         "0": "成功",
         "1": "API 调用失败 — 检查参数后重试",
-        "2": "认证失败 — 执行 {baseDir}/dws auth login --device --no-browser --format json",
+        "2": "认证失败 — 执行 dws auth login --device --no-browser --format json",
         "3": "参数校验失败 — 用 --help 确认正确用法",
         "4": "PAT 拦截",
         "5": "内部错误 — 用 --verbose 收集诊断信息",
@@ -225,8 +225,8 @@
     "source_skill_mode": "mono",
     "migration_date": "2026-08-07",
     "cli_version": ">=1.0.15",
-    "skill_type": "self-contained",
-    "binary_included": true,
-    "no_external_downloads": true
+    "skill_type": "external-dep",
+    "binary_included": false,
+    "no_external_downloads": false
   }
 }

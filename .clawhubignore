@@ -1,4 +1,2 @@
 # dws-skill 不需要打包进分发的文件
-dws-placeholder
-scripts/build-dws.sh
 README.md
