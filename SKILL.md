@@ -3,88 +3,105 @@ name: xiaoyi-dws-cli
 description: 管理钉钉核心能力：AI表格、AI搜问、日历、通讯录、群聊机器人、待办、审批、考勤、日志、DING消息、开放平台文档、钉钉文档、云盘、原生Markdown、AI听记、邮箱、在线表格、知识库。支持表格操作、日程会议、找人查责、通讯录管理、群聊管理、机器人消息、待办创建、审批提交、考勤查看、日志提交、文档读写、云盘上传下载、Markdown读写、听记纪要查询、邮件收发、知识库管理，以及IM和OA审批事件实时监听。
 ---
 
-# 钉钉全产品 Skill
+# dws — 钉钉全产品 Skill
 
-通过 `dws` 命令管理钉钉产品能力，所有命令通过bash工具执行，禁止使用exec工具。
+通过 `dws` 命令行工具管理钉钉产品能力。本文件是操作手册：先读规则，再走前置检查，全部通过后才可执行业务命令。
 
-## 使用前安装
+## 核心规则（最高优先级，任何场景不得违反）
 
-本skill依赖静态编译的二进制文件——dws，**使用前必须先安装dws**，并验证。
+1. **前置门禁**：发起任何业务功能前，必须先完成 [前置检查流程](#前置检查流程强制门禁) 中的环境校验与登录校验。未通过校验，严禁执行任何产品命令。
+2. **登录时机**：仅在两种情况下执行登录 —— ① 本机首次使用 dws；② 本地登录凭证已过期。其余情况直接复用已有凭证，不得重复登录。
+3. **登录方式唯一**：只允许设备流（device flow）登录，即 `dws auth login --device ...`。严禁使用任何其他登录方式（二维码、浏览器回调等一律禁止）。
+4. **工具限制**：所有命令只能通过 bash 工具执行。严禁使用 exec 工具。
+5. **输出格式**：所有发送给用户的内容必须是 markdown 格式文本。
+6. **数据真实性**：不得编造 ID、UUID、字段名、参数值；一切标识符必须从命令返回结果中提取。
 
-### 安装 dws
+## 前置检查流程（强制门禁）
+
+每次会话中第一次使用业务功能前，依次执行以下步骤。**全部通过后才可进入业务操作**。
+
+### Step 0 — 安装 dws（仅当 dws 不可用时执行）
+
+先执行 Step 1 校验；仅当 `dws version` 失败（dws 未安装）时才执行本步骤。
+
+使用本地安装脚本 `install.sh`（与本 SKILL.md 位于同一目录），必须携带 `DWS_NO_SKILLS=1`（本 skill 已随本地仓库提供，无需安装技能）：
 
 ```bash
-curl -fsSL https://gitee.com/DingTalk-Real-AI/dingtalk-workspace-cli/raw/main/scripts/install.sh | DWS_NO_SKILLS=1 sh
+DWS_NO_SKILLS=1 sh "./install.sh"
 ```
 
-### dws 环境验证
-每次使用`dws`时，需要在当前会话中**声明dws二进制文件path路径**：
-```bash
-export PATH="/home/sandbox/.local/bin:$PATH"
-```
+默认安装到 `~/.local/bin`。安装完成后回到 Step 1 重新校验。
 
-声明后进行验证：
+### Step 1 — 校验 dws 环境（每次使用前必须）
+
 ```bash
+export PATH="$HOME/.local/bin:$PATH"
 dws version
 ```
-## 登录（仅支持设备流）
 
-**只支持设备流登录方式**，禁止使用其他登录方式。
+判定标准：
 
-### 首次登录
+- ✅ 输出 dws 版本信息 → 环境可用，进入 Step 2。
+- ❌ 报 `command not found` 或执行失败 → dws 未安装或不在 PATH，回到 Step 0 安装。
+
+**未通过本步，严禁执行任何 dws 命令。**
+
+### Step 2 — 校验登录状态（每次使用前必须）
+
+```bash
+dws profile list --format json
+```
+
+判定标准：
+
+- ✅ 输出中包含有效 profile（已有登录凭证）→ 登录态可用，前置检查通过，可以发起业务功能。
+- ❌ 输出为空 / 无有效 profile / 包含认证错误（凭证缺失或已过期）→ 进入 Step 3 执行设备流登录。
+
+### Step 3 — 设备流登录（仅首次使用或凭证过期时执行）
 
 ```bash
 dws auth login --device --no-browser --format json
 ```
 
-终端会输出:
+执行流程：
 
-```
-● Step 1: Requesting device authorization code...
+1. 命令输出授权链接（含验证码）。
+2. 将授权链接以 markdown 格式发送给用户，例如：
 
-  ╭────────────────────────────────────────────────────────────────────────────────────╮
-  │  Please open the following link in your browser and enter the authorization code:  │
-  │                                                                                    │
-  │    link: https://login.dingtalk.com/oauth2/device/verify.htm                       │
-  │    authorization code: BNVS-XKNG                                                   │
-  │                                                                                    │
-  │  Or open the following link:                                                       │
-  │    https://login.dingtalk.com/oauth2/device/verify.htm?user_code=BNVS-XKNG         │
-  │                                                                                    │
-  │  Authorization code will expire in 900 seconds.                                    │
-  ╰────────────────────────────────────────────────────────────────────────────────────╯
+   > 请在浏览器打开以下链接完成授权：
+   > `https://login.dingtalk.com/oauth2/device/verify.htm?user_code=BNVS-XKNG`
 
-● Step 2: Waiting for user authorization...
-```
-不需要在沙箱环境内拉取浏览器进行登录，只要把带有验证码的链接发给用户即可！
-禁止询问用户是否需要打开钉钉APP!所有操作在钉钉CLI内完成，禁止拉起钉钉APP！
+3. dws 会自动轮询等待用户授权完成（最长约 10 分钟），完成后凭据自动持久化。
+4. 登录完成后回到 Step 2 复核登录状态，确认通过后再发起业务功能。
 
-**将带有验证码的链接以markdown格式发送给用户**。
-（例如：https://login.dingtalk.com/oauth2/device/verify.htm?user_code=BNVS-XKNG）
+注意事项：
 
-CLI 会自动轮询等待授权完成（最长 10 分钟），完成后凭据自动持久化。
+- 不需要在沙箱环境内拉取浏览器，把带验证码的链接发给用户即可。
+- 禁止询问用户是否需要打开钉钉 APP；所有操作在 dws CLI 内完成，禁止拉起钉钉 APP。
+- `--device` 是唯一允许的登录方式；去掉 `--device` 或改用其他登录方式一律禁止。
 
-### 验证登录状态
-
-```bash
-dws profile list --format json
-```
 ---
 
 ## 严格禁止 (NEVER DO)
-- 不要使用 dws 命令以外的方式操作（禁止 curl、HTTP API、浏览器）
-- 不要编造 UUID、ID 等标识符，必须从命令返回中提取
-- 不要猜测字段名/参数值，操作前必须先查询确认
+
+- 未经前置检查（环境校验 + 登录校验）就发起任何业务功能。
+- 使用 dws 命令以外的方式操作钉钉（禁止 curl、HTTP API、浏览器）。
+- 使用 exec 工具执行命令 —— 所有命令只用 bash 工具。
+- 使用设备流以外的任何登录方式。
+- 编造 UUID、ID 等标识符，必须从命令返回中提取。
+- 猜测字段名/参数值，操作前必须先查询确认。
+- 向用户发送非 markdown 格式的内容。
 
 ## 严格要求 (MUST DO)
-- 所有命令必须加 `--format json` 以获取可解析输出
-- 危险操作必须先向用户确认，用户同意后才加 `--yes` 执行
-- 单次批量操作不超过 30 条记录
-- 所有命令必须**严格遵循**对应产品参考文档里面规定的参数格式（如：如果有参数值，则参数和参数值之间至少用一个空格隔开）
-- **脚本只用于明确覆盖的复合任务**：[scripts/](./scripts/) 下的脚本可封装 AI 表格批量导入导出、AI 应用创建轮询、文档创建后写内容、钉盘目录树等流程；当公开 `+` Shortcut 已提供目标唯一解析、分页/部分失败 ledger 和确认语义时，优先 Shortcut。Chat 历史导出与机器人广播已完全下沉 Runtime，不再发布兼容脚本
-- **实时个人事件例外**：普通 IM 消息、reaction、已读和撤回默认走 `dws event +listen-im ...`；OA 审批、群生命周期、明确的原始 EventKey、Filter DSL、subscribe_id 或原始 envelope 使用 `dws event consume ... --flatten`。不要写脚本轮询消息历史或审批列表
-- 只允许使用**设备流**登录方式，严禁使用其他登录方式
-- 所有发送给用户的内容必须是**markdown格式**
+
+- 所有命令必须加 `--format json` 以获取可解析输出。
+- 危险操作必须先向用户展示操作摘要并获得明确同意，同意后才加 `--yes` 执行。
+- 单次批量操作不超过 30 条记录。
+- 所有命令必须**严格遵循**对应产品参考文档里面规定的参数格式（如：如果有参数值，则参数和参数值之间至少用一个空格隔开）。
+- **脚本只用于明确覆盖的复合任务**：[scripts/](./scripts/) 下的脚本可封装 AI 表格批量导入导出、AI 应用创建轮询、文档创建后写内容、钉盘目录树等流程；当公开 `+` Shortcut 已提供目标唯一解析、分页/部分失败 ledger 和确认语义时，优先 Shortcut。Chat 历史导出与机器人广播已完全下沉 Runtime，不再发布兼容脚本。
+- **实时个人事件例外**：普通 IM 消息、reaction、已读和撤回默认走 `dws event +listen-im ...`；OA 审批、群生命周期、明确的原始 EventKey、Filter DSL、subscribe_id 或原始 envelope 使用 `dws event consume ... --flatten`。不要写脚本轮询消息历史或审批列表。
+- 所有发送给用户的内容必须是**markdown 格式**。
+- 登录仅在首次使用或凭证过期时进行；每次使用前先校验登录状态，不要无谓地重复登录。
 
 ## 产品总览
 
@@ -114,6 +131,7 @@ dws profile list --format json
 | `event`           | 个人 IM/OA 事件：监听消息、群生命周期、审批任务与审批实例事件，NDJSON 输出（实时驱动 Agent）| [event.md](./references/products/event.md)                     |
 
 ## 意图判断决策树
+
 用户意图判断详细内容参考 [intent-tree.md](./references/intent-tree.md)
 
 ## 危险操作确认
@@ -169,13 +187,16 @@ Step 3 → 加 --yes 执行命令
 - 用 `echo yes | dws ...` 等管道方式喂答案代替 `--yes`（管道答案技术上会被接受，但违背了让用户显式知悉的设计意图）
 
 ## 核心流程
-作为一个智能助手，你的首要任务是**理解用户的真实、完整的意图**，而不是简单地执行命令。在选择 `dws` 的产品命令前，必须严格遵循以下四步流程：
+
+作为一个智能助手，你的首要任务是**理解用户的真实、完整的意图**，而不是简单地执行命令。在选择 `dws` 的产品命令前，必须严格遵循以下流程：
 
 0. **URL 预检**：输入含 `alidocs.dingtalk.com` URL 时，该域名下存在多种路径格式（`/i/nodes/...`、`/i/p/...`、`/spreadsheetv2/...`、`/document/edit|preview?dentryKey=...` 等），每种的处理流程不同。**必须先读取 [url-patterns.md](./references/url-patterns.md) 中的「alidocs URL 分流决策」**，按其中规则识别 URL 类型后再选择对应产品。含 `shanji.dingtalk.com` URL 时直接路由到 `minutes`。URL 已识别后直接进入对应产品流程，无需后续步骤。
 1. 意图分类：首先，判断用户指令的核心 动词/动作 属于哪一类。这比关注名词更重要。
 2. 歧义处理与信息追问：如果用户指令模糊或包含多个产品的关键字，严禁猜测。必须主动向用户追问以澄清意图。这是你作为智能助手而非命令执行器的核心价值。
 3. 精准产品映射：在完成前两步，意图已经清晰后，参考产品总览和意图判断决策树 来选择产品。
 4. 按任务最小化读取：已知高频意图直接使用本 Skill 或产品 reference 已给出的唯一命令，不预加载完整产品参考文件；只有路由、参数或异常恢复确实需要时，才读取对应产品或任务 reference。
+
+执行业务命令前，必须先完成[前置检查流程](#前置检查流程强制门禁)（环境校验 + 登录校验）。
 
 ## 命令发现
 
@@ -188,8 +209,9 @@ dws schema
 详细内容参考 [progressive-loading-schema.md](./references/progressive-loading-schema.md)
 
 ## 错误处理
+
 1. 先读取 JSON 错误的 `retryable`、`retry_after_seconds`、`next_retry_at`、`hint` 和 `actions`；只有明确 `retryable=true` 时才按服务端节奏做一次有界重试。缺少重试语义时加 `--verbose` 收集诊断后停止
 2. 仍然失败，报告完整错误信息给用户，禁止自行尝试替代方案
-3. 认证失败时，参考 [global-reference.md](./references/global-reference.md) 中的认证章节处理
+3. 认证失败（凭证缺失/过期/无效）时，回到[前置检查流程](#前置检查流程强制门禁)的 Step 2 校验登录状态，按需执行 Step 3 设备流登录，成功后重试原命令；细节参考 [global-reference.md](./references/global-reference.md) 中的认证章节
 4. 各产品高频错误及排查流程见 [error-codes.md](./references/error-codes.md)
 5. 遇到 [capability-limits.md](./references/capability-limits.md) 中列出的「已知不支持操作」时，**直接告知用户不支持并建议在钉钉客户端操作**，不要重试或变通
